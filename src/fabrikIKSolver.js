@@ -87,7 +87,7 @@ function fabrikIKSolver(jointPositions, targetPosition) {
   }
   // The target is reachable...
   else {
-    //...thus, set as b the initial position of the joint p[0].
+    //...thus, store the initial base position, which is position of the joint p[0].
     const initialBasePosition = new Vector3().copy(jointPositions[0]);
 
     let endEffectorPosition = jointPositions[jointPositions.length - 1];
@@ -99,14 +99,20 @@ function fabrikIKSolver(jointPositions, targetPosition) {
     let numOfIterations = 0;
 
     // Check whether the distance between the end effector p[n]
-    // and the target t is greater than a tolerance.
+    // and the target t is greater than a tolerance and maximum number
+    // of iterations is reached.
     while (
       endEffectorTargetDistance > TOLERANCE &&
       numOfIterations <= MAX_ITERATIONS
     ) {
       // *** STAGE 1: FORWARD REACHING ***
+      // 1) Move the end effector p[n] to the target.
+      // 2) Find the position of the joint p[n - 1], which lies on the line
+      //    that passes through p[n] and p[n - 1] and has distance d[n - 1]
+      //    from p[n].
+      // 3) continue the algorithm for the rest of the joints.
 
-      // Set the end effector p[n] as target t.
+      // Move the end effector p[n] to target t.
       jointPositions[jointPositions.length - 1] = targetPosition;
 
       // For i = n - 1, ..., 0  do
@@ -129,8 +135,15 @@ function fabrikIKSolver(jointPositions, targetPosition) {
           .add(copiedJointPosition.multiplyScalar(lambda));
 
         // *** STAGE 2: BACKWARD REACHING ***
+        // 1) Move the root joint p[0] to its initial position.
+        // 2) Find the position of joint p[1], which lies on the line that passes
+        //    through p[0] and p[1] and has distance d[0] from p[0].
+        // 3) continue the algorithm for the rest of the joints.
 
-        // Set the root p[0] its initial position.
+        // The two stages algorithm is repeated until the position of the end
+        // effector reaches the target or gets sufficiently close.
+
+        // Set the root p[0] to its initial position, the initial base position.
         jointPositions[0] = initialBasePosition;
 
         // For i = 1, ..., n - 1 do
