@@ -82,7 +82,7 @@ function fabrikIKSolver(jointPositions, targetPosition) {
   // The target is reachable...
   else {
     //...thus, set as b the initial position of the joint p[0].
-    const initialRootPosition = new Vector3().copy(jointPositions[0]);
+    const initialBasePosition = new Vector3().copy(jointPositions[0]);
 
     let endEffectorPosition = jointPositions[jointPositions.length - 1];
     // dif[A] = \p[n] - t|
@@ -122,7 +122,7 @@ function fabrikIKSolver(jointPositions, targetPosition) {
         // *** STAGE 2: BACKWARD REACHING ***
 
         // Set the root p[0] its initial position.
-        jointPositions[0] = initialRootPosition;
+        jointPositions[0] = initialBasePosition;
 
         // For i = 1, ..., n - 1 do
         for (let idx = 0; idx < jointDistances.length; idx++) {
