@@ -106,10 +106,10 @@ function fabrikIKSolver(jointPositions, targetPosition) {
       numOfIterations <= MAX_ITERATIONS
     ) {
       // *** STAGE 1: FORWARD REACHING ***
-      // 1) Move the end effector p[n] to the target.
+      // 1) Move the end effector p[n] to the target. Let's call it p[n]'.
       // 2) Find the position of the joint p[n - 1], which lies on the line
-      //    that passes through p[n] and p[n - 1] and has distance d[n - 1]
-      //    from p[n].
+      //    that passes through p[n]' and p[n - 1] and has distance d[n - 1]
+      //    from p[n]'.
       // 3) continue the algorithm for the rest of the joints.
 
       // Move the end effector p[n] to target t.
@@ -135,9 +135,9 @@ function fabrikIKSolver(jointPositions, targetPosition) {
           .add(copiedJointPosition.multiplyScalar(lambda));
 
         // *** STAGE 2: BACKWARD REACHING ***
-        // 1) Move the root joint p[0] to its initial position.
+        // 1) Move the root joint p[0] to its initial position. Let's call it p[0]'.
         // 2) Find the position of joint p[1], which lies on the line that passes
-        //    through p[0] and p[1] and has distance d[0] from p[0].
+        //    through p[0]' and p[1] and has distance d[0] from p[0]'.
         // 3) continue the algorithm for the rest of the joints.
 
         // The two stages algorithm is repeated until the position of the end
