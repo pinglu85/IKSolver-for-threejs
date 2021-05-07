@@ -44,6 +44,14 @@ function IKSolver(joints, target) {
   return fabrikIKSolver(jointPositions, target.position);
 }
 
+// Minimum distance between the end effector and the target, if the
+// target is reachable. The algorithm will stop solving if the distance
+// between the end effector and the target is smaller than the tolerance,
+// meaning the end effector reaches the target or gets sufficiently close.
+// If tolerance is zero, the algorithm will iterate until `MAX_ITERATIONS`.
+const TOLERANCE = 0.1;
+const MAX_ITERATIONS = 10;
+
 /**
  * JavaScript implementation of FABRIK algorithm: http://www.andreasaristidou.com/FABRIK.html
  * @param {Vector3[]} jointPositions The joint positions p[i] for i = 0,. . .,n.
@@ -59,8 +67,6 @@ function fabrikIKSolver(jointPositions, targetPosition) {
   // Check whether the target is within reach.
   // The target is unreachable.
   if (rootTargetDistance > rootEndEffectorDistance) {
-    console.log('[UNREACHABLE] runs');
-
     // For i = 0, ..., n - 1 do
     for (let idx = 0; idx < jointDistances.length; idx++) {
       // Find the distance r[i] between the target t and the joint position p[i].
@@ -90,11 +96,14 @@ function fabrikIKSolver(jointPositions, targetPosition) {
       targetPosition
     );
 
+    let numOfIterations = 0;
+
     // Check whether the distance between the end effector p[n]
     // and the target t is greater than a tolerance.
-    const TOLERANCE = 0.1;
-    while (endEffectorTargetDistance > TOLERANCE) {
-      console.log('runs');
+    while (
+      endEffectorTargetDistance > TOLERANCE &&
+      numOfIterations <= MAX_ITERATIONS
+    ) {
       // *** STAGE 1: FORWARD REACHING ***
 
       // Set the end effector p[n] as target t.
@@ -151,6 +160,8 @@ function fabrikIKSolver(jointPositions, targetPosition) {
           targetPosition
         );
       }
+
+      numOfIterations++;
     }
   }
 
