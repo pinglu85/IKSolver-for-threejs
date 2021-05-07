@@ -70,15 +70,16 @@ function fabrikIKSolver(jointPositions, targetPosition) {
     // For i = 0, ..., n - 1 do
     for (let idx = 0; idx < jointDistances.length; idx++) {
       // Find the distance r[i] between the target t and the joint position p[i].
+      // What we are really doing here is create a direct line from p[1] to target,
+      // so that we can find the position of p[i + 1], which lies on the line passing
+      // through p[1] and target t.
       const jointPosition = new Vector3().copy(jointPositions[idx]);
-
       // r[i] = |t - p[i]|
       const targetJointDistance = targetPosition.distanceTo(jointPosition);
       const lambda = jointDistances[idx] / targetJointDistance;
 
-      // Find the new joint positions p[i].
+      // Find the new joint positions p[i + 1].
       const copiedTargetPosition = new Vector3().copy(targetPosition);
-
       // p[i + 1] = (1 - lambda[i]) * p[i] + lambda[i] * t
       jointPositions[idx + 1] = jointPosition
         .multiplyScalar(1 - lambda)
