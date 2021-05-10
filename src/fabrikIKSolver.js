@@ -191,7 +191,7 @@ function backwardReaching(jointPositions) {
     const copiedChildJointPosition = new Vector3().copy(
       jointPositions[idx + 1]
     );
-    // Find the new joint positions p[i].
+    // Find the new joint positions p[i + 1].
     jointPositions[idx + 1] = copiedJointPosition
       .multiplyScalar(1 - lambda)
       .add(copiedChildJointPosition.multiplyScalar(lambda));
