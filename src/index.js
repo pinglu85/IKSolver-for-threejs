@@ -39,7 +39,7 @@ const bones = [];
 let parentBone;
 for (let idx = 0; idx < BONE_COUNT; idx++) {
   const bone = new Bone();
-  bone.position.y = idx === 0 ? 0 : 0.25;
+  bone.position.y = idx === 0 ? 0 : BONE_LENGTH;
   // bone.matrixWorldNeedsUpdate = true;
   if (parentBone) parentBone.add(bone);
   parentBone = bone;
