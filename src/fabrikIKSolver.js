@@ -134,46 +134,46 @@ function fabrikIKSolver(jointPositions, targetPosition) {
         jointPositions[idx] = copiedChildJointPosition
           .multiplyScalar(1 - lambda)
           .add(copiedJointPosition.multiplyScalar(lambda));
-
-        // *** STAGE 2: BACKWARD REACHING ***
-        // 1) Move the root joint p[0] to its initial position. Let's call it p[0]'.
-        // 2) Find the position of joint p[1], which lies on the line that passes
-        //    through p[0]' and p[1] and has distance d[0] from p[0]'.
-        // 3) continue the algorithm for the rest of the joints.
-
-        // The two stages algorithm is repeated until the position of the end
-        // effector reaches the target or gets sufficiently close.
-
-        // Set the root p[0] to its initial position, the initial base position.
-        jointPositions[0] = initialBasePosition;
-
-        // For i = 1, ..., n - 1 do
-        for (let idx = 0; idx < jointDistances.length; idx++) {
-          // Find the distance r[i] between the new joint position p[i]
-          // and the joint p[i + 1].
-          // r[i] = |p[i + 1] - p[i]|
-          const childJointJointDistance = jointPositions[idx + 1].distanceTo(
-            jointPositions[idx]
-          );
-          const lambda = jointDistances[idx] / childJointJointDistance;
-
-          const copiedJointPosition = new Vector3().copy(jointPositions[idx]);
-          const copiedChildJointPosition = new Vector3().copy(
-            jointPositions[idx + 1]
-          );
-          // Find the new joint positions p[i].
-          jointPositions[idx + 1] = copiedJointPosition
-            .multiplyScalar(1 - lambda)
-            .add(copiedChildJointPosition.multiplyScalar(lambda));
-        }
-
-        // Update the distance between the end effector p[n] and the target.
-        endEffectorPosition = jointPositions[jointPositions.length - 1];
-        // dif[A] = \p[n] - t|
-        endEffectorTargetDistance = endEffectorPosition.distanceTo(
-          targetPosition
-        );
       }
+
+      // *** STAGE 2: BACKWARD REACHING ***
+      // 1) Move the root joint p[0] to its initial position. Let's call it p[0]'.
+      // 2) Find the position of joint p[1], which lies on the line that passes
+      //    through p[0]' and p[1] and has distance d[0] from p[0]'.
+      // 3) continue the algorithm for the rest of the joints.
+
+      // The two stages algorithm is repeated until the position of the end
+      // effector reaches the target or gets sufficiently close.
+
+      // Set the root p[0] to its initial position, the initial base position.
+      jointPositions[0] = initialBasePosition;
+
+      // For i = 1, ..., n - 1 do
+      for (let idx = 0; idx < jointDistances.length; idx++) {
+        // Find the distance r[i] between the new joint position p[i]
+        // and the joint p[i + 1].
+        // r[i] = |p[i + 1] - p[i]|
+        const childJointJointDistance = jointPositions[idx + 1].distanceTo(
+          jointPositions[idx]
+        );
+        const lambda = jointDistances[idx] / childJointJointDistance;
+
+        const copiedJointPosition = new Vector3().copy(jointPositions[idx]);
+        const copiedChildJointPosition = new Vector3().copy(
+          jointPositions[idx + 1]
+        );
+        // Find the new joint positions p[i].
+        jointPositions[idx + 1] = copiedJointPosition
+          .multiplyScalar(1 - lambda)
+          .add(copiedChildJointPosition.multiplyScalar(lambda));
+      }
+
+      // Update the distance between the end effector p[n] and the target.
+      endEffectorPosition = jointPositions[jointPositions.length - 1];
+      // dif[A] = \p[n] - t|
+      endEffectorTargetDistance = endEffectorPosition.distanceTo(
+        targetPosition
+      );
 
       numOfIterations++;
     }
