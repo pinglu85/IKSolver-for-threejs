@@ -1,4 +1,9 @@
-import { Vector3 } from 'three';
+import { Vector3, MathUtils } from 'three';
+
+import applyLimitsToChildJoint from './applyLimitsToChildJoint';
+
+const isConstrained = true;
+const jointsConstraints = [];
 
 // The distances between each joint d[i] = |p[i + 1] - p[i]| For i = 0,..., n - 1.
 const jointDistances = [];
@@ -15,15 +20,23 @@ function IKSolver(joints, target) {
     joint.getWorldPosition(jointPosition);
     jointPositions[idx] = jointPosition;
 
+    const constraint =
+      idx === 0 ? MathUtils.degToRad(0) : MathUtils.degToRad(10);
+    jointsConstraints.push({
+      leftAngle: constraint,
+      rightAngle: constraint,
+      upAngle: constraint,
+      downAngle: constraint,
+    });
+
     if (jointDistances.length === joints.length - 1) continue;
 
     if (idx < joints.length - 1) {
       const childJoint = joints[idx + 1];
       const childJointPosition = new Vector3();
       childJoint.getWorldPosition(childJointPosition);
-      const childJointJointDistance = childJointPosition.distanceTo(
-        jointPosition
-      );
+      const childJointJointDistance =
+        childJointPosition.distanceTo(jointPosition);
       jointDistances[idx] = childJointJointDistance;
     }
   }
@@ -80,9 +93,8 @@ function fabrikIKSolver(jointPositions, targetPosition) {
 
   let endEffectorPosition = jointPositions[jointPositions.length - 1];
   // dif[A] = \p[n] - t|
-  let endEffectorTargetDistance = endEffectorPosition.distanceTo(
-    targetPosition
-  );
+  let endEffectorTargetDistance =
+    endEffectorPosition.distanceTo(targetPosition);
 
   let numOfIterations = 0;
 
@@ -142,15 +154,35 @@ function computeJointsNewPositionsOnTargetUnreachable(
     // through p[1] and target t.
     const jointPosition = new Vector3().copy(jointPositions[idx]);
     // r[i] = |t - p[i]|
-    const targetJointDistance = targetPosition.distanceTo(jointPosition);
+    const targetJointDistance = targetPosition.distanceTo(jointPositions[idx]);
     const lambda = jointDistances[idx] / targetJointDistance;
 
     // Find the new joint positions p[i + 1].
     const copiedTargetPosition = new Vector3().copy(targetPosition);
     // p[i + 1] = (1 - lambda[i]) * p[i] + lambda[i] * t
-    jointPositions[idx + 1] = jointPosition
+    let newChildJointPosition = jointPosition
       .multiplyScalar(1 - lambda)
       .add(copiedTargetPosition.multiplyScalar(lambda));
+    if (isConstrained) {
+      newChildJointPosition = applyLimitsToChildJoint(
+        jointPositions[idx],
+        jointPositions[idx + 1],
+        newChildJointPosition,
+        jointsConstraints[idx]
+      );
+    }
+
+    const positionHasNotChanged = newChildJointPosition
+      .toArray()
+      .every((position) => position === 0);
+    if (positionHasNotChanged) {
+      jointPositions[idx + 1] = jointPositions[idx]
+        .clone()
+        .add(new Vector3(0, jointDistances[idx], 0));
+      continue;
+    }
+
+    jointPositions[idx + 1] = newChildJointPosition;
   }
 }
 
@@ -177,7 +209,12 @@ function forwardReaching(jointPositions) {
 }
 
 function backwardReaching(jointPositions) {
-  // For i = 1, ..., n - 1 do
+  // // The 3D vector of the cone.
+  // let dirFromJointToChildJoint = jointPositions[1]
+  //   .clone()
+  //   .sub(jointPositions[0]);
+
+  // For i = 0, ..., n - 1 do
   for (let idx = 0; idx < jointDistances.length; idx++) {
     // Find the distance r[i] between the new joint position p[i]
     // and the joint p[i + 1].
@@ -187,14 +224,35 @@ function backwardReaching(jointPositions) {
     );
     const lambda = jointDistances[idx] / childJointJointDistance;
 
-    const copiedJointPosition = new Vector3().copy(jointPositions[idx]);
-    const copiedChildJointPosition = new Vector3().copy(
-      jointPositions[idx + 1]
-    );
     // Find the new joint positions p[i + 1].
-    jointPositions[idx + 1] = copiedJointPosition
+    let newChildJointPosition = jointPositions[idx]
+      .clone()
       .multiplyScalar(1 - lambda)
-      .add(copiedChildJointPosition.multiplyScalar(lambda));
+      .add(jointPositions[idx + 1].clone().multiplyScalar(lambda));
+    if (isConstrained) {
+      newChildJointPosition = applyLimitsToChildJoint(
+        jointPositions[idx],
+        jointPositions[idx + 1],
+        newChildJointPosition,
+        jointsConstraints[idx]
+      );
+    }
+
+    const positionHasNotChanged = newChildJointPosition
+      .toArray()
+      .every((position) => position === 0);
+
+    if (positionHasNotChanged) {
+      jointPositions[idx + 1] = jointPositions[idx]
+        .clone()
+        .add(new Vector3(0, jointDistances[idx], 0));
+      continue;
+    }
+
+    jointPositions[idx + 1] = newChildJointPosition;
+    // dirFromJointToChildJoint = jointPositions[idx + 1]
+    //   .clone()
+    //   .sub(jointPositions[idx]);
   }
 }
 
