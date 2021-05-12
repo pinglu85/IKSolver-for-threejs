@@ -239,8 +239,10 @@ function ccdIKSolver(targetPosition) {
     // that will end up with awkward rotation of the joint before the final rotation
     // is found.
     const inverseRotation = joint.quaternion.clone().invert();
-    const hingeAxis = joint.axis.clone().applyQuaternion(inverseRotation);
-    fromToQuaternion.setFromUnitVectors(joint.axis, hingeAxis);
+    const hingeAxisAfterRotation = joint.axis
+      .clone()
+      .applyQuaternion(inverseRotation);
+    fromToQuaternion.setFromUnitVectors(joint.axis, hingeAxisAfterRotation);
     joint.quaternion.multiply(fromToQuaternion);
 
     joint.updateMatrixWorld();
