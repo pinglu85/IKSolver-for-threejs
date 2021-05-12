@@ -228,7 +228,16 @@ function ccdIKSolver(targetPosition) {
     joint.quaternion.multiply(fromToQuaternion);
 
     // Constrain the joint rotation to its hinge axis.
+    // Let `axis[i]` denote the current hinge axis. Since the current joint
+    // has been rotated in the previous step, we apply same rotation to `axis[i]`,
+    // which gives us the new axis `axis[i]'`. To constrain the rotation to the
+    // specified axis, we can rotate back the current joint by the rotation defined
+    // between `axis[i]` and `axis[i]'`.
 
+    // We can compute the amount that we need to rotate back the current joint
+    // without inverting the rotation that has been applied to that joint, but
+    // that will end up with awkward rotation of the joint before the final rotation
+    // is found.
     const inverseRotation = joint.quaternion.clone().invert();
     const hingeAxis = joint.axis.clone().applyQuaternion(inverseRotation);
     fromToQuaternion.setFromUnitVectors(joint.axis, hingeAxis);
