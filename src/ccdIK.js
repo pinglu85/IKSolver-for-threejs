@@ -104,7 +104,7 @@ const fifthJoint = {
 const sixthJoint = {
   localPosition: [0, 0.19, 0],
   axis: [1, 0, 0],
-  limits: [-120, 120],
+  limits: [-10, 10],
 };
 
 const seventhJoint = {
@@ -244,6 +244,23 @@ function ccdIKSolver(targetPosition) {
       .applyQuaternion(inverseRotation);
     fromToQuaternion.setFromUnitVectors(joint.axis, hingeAxisAfterRotation);
     joint.quaternion.multiply(fromToQuaternion);
+
+    // Apply hinge limits.
+
+    const clampedRotation = joint.rotation.toVector3();
+    const hingeAxis = joint.axis.toArray();
+    for (let idx = 0; idx < hingeAxis.length; idx++) {
+      if (hingeAxis[idx] === 1) {
+        const rotationValue = clampedRotation.getComponent(idx);
+        const clampedValue = MathUtils.clamp(
+          rotationValue,
+          joint.limits.min,
+          joint.limits.max
+        );
+        clampedRotation.setComponent(idx, clampedValue);
+      }
+    }
+    joint.rotation.setFromVector3(clampedRotation);
 
     joint.updateMatrixWorld();
   }
