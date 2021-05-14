@@ -189,8 +189,8 @@ function addJoint(parent, { localPosition, axis, limits }, idx) {
 console.log(IKChain);
 
 function ccdIKSolver(targetPosition) {
-  const endEffectorWorldPosition = new Vector3();
   const endEffector = IKChain[IKChain.length - 1];
+  const endEffectorWorldPosition = new Vector3();
 
   const fromToQuaternion = new Quaternion();
 
