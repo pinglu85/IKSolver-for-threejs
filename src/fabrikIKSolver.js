@@ -21,9 +21,8 @@ function IKSolver(joints, target) {
       const childJoint = joints[idx + 1];
       const childJointPosition = new Vector3();
       childJoint.getWorldPosition(childJointPosition);
-      const childJointJointDistance = childJointPosition.distanceTo(
-        jointPosition
-      );
+      const childJointJointDistance =
+        childJointPosition.distanceTo(jointPosition);
       jointDistances[idx] = childJointJointDistance;
     }
   }
@@ -48,9 +47,9 @@ function IKSolver(joints, target) {
 // target is reachable. The algorithm will stop solving if the distance
 // between the end effector and the target is smaller than the tolerance,
 // meaning the end effector reaches the target or gets sufficiently close.
-// If tolerance is zero, the algorithm will iterate until `MAX_ITERATIONS`.
+// If tolerance is zero, the algorithm will iterate until `MAX_NUM_OF_ITERATIONS`.
 const TOLERANCE = 0.1;
-const MAX_ITERATIONS = 10;
+const MAX_NUM_OF_ITERATIONS = 10;
 
 /**
  * JavaScript implementation of FABRIK algorithm: http://www.andreasaristidou.com/FABRIK.html
@@ -80,9 +79,8 @@ function fabrikIKSolver(jointPositions, targetPosition) {
 
   let endEffectorPosition = jointPositions[jointPositions.length - 1];
   // dif[A] = \p[n] - t|
-  let endEffectorTargetDistance = endEffectorPosition.distanceTo(
-    targetPosition
-  );
+  let endEffectorTargetDistance =
+    endEffectorPosition.distanceTo(targetPosition);
 
   let numOfIterations = 0;
 
@@ -91,7 +89,7 @@ function fabrikIKSolver(jointPositions, targetPosition) {
   // of iterations is reached.
   while (
     endEffectorTargetDistance > TOLERANCE &&
-    numOfIterations <= MAX_ITERATIONS
+    numOfIterations <= MAX_NUM_OF_ITERATIONS
   ) {
     // *** STAGE 1: FORWARD REACHING ***
     // 1) Move the end effector p[n] to the target. Let's call it p[n]'.
