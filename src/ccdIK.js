@@ -18,6 +18,9 @@ import {
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 
+const TOLERANCE = 0.01;
+const MAX_NUM_OF_ITERATIONS = 10;
+
 const scene = new Scene();
 const camera = new PerspectiveCamera(
   45,
@@ -194,75 +197,90 @@ function ccdIKSolver(targetPosition) {
 
   const fromToQuaternion = new Quaternion();
 
-  for (let idx = IKChain.length - 2; idx >= 0; idx--) {
-    endEffector.getWorldPosition(endEffectorWorldPosition);
+  let endEffectorTargetDistance = endEffector
+    .worldToLocal(targetPosition.clone())
+    .length();
+  let numOfIterations = 0;
 
-    const joint = IKChain[idx];
+  while (
+    endEffectorTargetDistance > TOLERANCE &&
+    numOfIterations <= MAX_NUM_OF_ITERATIONS
+  ) {
+    for (let idx = IKChain.length - 2; idx >= 0; idx--) {
+      endEffector.getWorldPosition(endEffectorWorldPosition);
 
-    // Rotate the joint from end effector to goal, so that the end-effector
-    // can meet the target.
-    // https://sites.google.com/site/auraliusproject/ccd-algorithm
+      const joint = IKChain[idx];
 
-    // Get the direction from current joint to end effector:
-    // direction = endEffector.position - joint.position.
-    // Since the position of end effector we get is a world position,
-    // we can either get current joint's world position to compute the
-    // direction, or transform end effector's world position
-    // to current joint's local space and then compute the direction.
-    // Since later we need to use the direction to compute the quaternion
-    // that will apply to current joint and it is easier to apply local
-    // quaternion, we choose the latter method.
-    const directionToEndEffector = joint
-      .worldToLocal(endEffectorWorldPosition.clone())
-      .normalize();
+      // Rotate the joint from end effector to goal, so that the end-effector
+      // can meet the target.
+      // https://sites.google.com/site/auraliusproject/ccd-algorithm
 
-    // Get the direction from current joint to target.
-    const directionToTarget = joint
-      .worldToLocal(targetPosition.clone())
-      .normalize();
+      // Get the direction from current joint to end effector:
+      // direction = endEffector.position - joint.position.
+      // Since the position of end effector we get is a world position,
+      // we can either get current joint's world position to compute the
+      // direction, or transform end effector's world position
+      // to current joint's local space and then compute the direction.
+      // Since later we need to use the direction to compute the quaternion
+      // that will apply to current joint and it is easier to apply local
+      // quaternion, we choose the latter method.
+      const directionToEndEffector = joint
+        .worldToLocal(endEffectorWorldPosition.clone())
+        .normalize();
 
-    fromToQuaternion.setFromUnitVectors(
-      directionToEndEffector,
-      directionToTarget
-    );
-    joint.quaternion.multiply(fromToQuaternion);
+      // Get the direction from current joint to target.
+      const directionToTarget = joint
+        .worldToLocal(targetPosition.clone())
+        .normalize();
 
-    // Constrain the joint rotation to its hinge axis.
-    // Let `axis[i]` denote the current hinge axis. Since the current joint
-    // has been rotated in the previous step, we apply same rotation to `axis[i]`,
-    // which gives us the new axis `axis[i]'`. To constrain the rotation to the
-    // specified axis, we can rotate back the current joint by the rotation defined
-    // between `axis[i]` and `axis[i]'`.
+      fromToQuaternion.setFromUnitVectors(
+        directionToEndEffector,
+        directionToTarget
+      );
+      joint.quaternion.multiply(fromToQuaternion);
 
-    // We can compute the amount that we need to rotate back the current joint
-    // without inverting the rotation that has been applied to that joint, but
-    // that will end up with awkward rotation of the joint before the final rotation
-    // is found.
-    const inverseRotation = joint.quaternion.clone().invert();
-    const hingeAxisAfterRotation = joint.axis
-      .clone()
-      .applyQuaternion(inverseRotation);
-    fromToQuaternion.setFromUnitVectors(joint.axis, hingeAxisAfterRotation);
-    joint.quaternion.multiply(fromToQuaternion);
+      // Constrain the joint rotation to its hinge axis.
+      // Let `axis[i]` denote the current hinge axis. Since the current joint
+      // has been rotated in the previous step, we apply same rotation to `axis[i]`,
+      // which gives us the new axis `axis[i]'`. To constrain the rotation to the
+      // specified axis, we can rotate back the current joint by the rotation defined
+      // between `axis[i]` and `axis[i]'`.
 
-    // Apply hinge limits.
+      // We can compute the amount that we need to rotate back the current joint
+      // without inverting the rotation that has been applied to that joint, but
+      // that will end up with awkward rotation of the joint before the final rotation
+      // is found.
+      const inverseRotation = joint.quaternion.clone().invert();
+      const hingeAxisAfterRotation = joint.axis
+        .clone()
+        .applyQuaternion(inverseRotation);
+      fromToQuaternion.setFromUnitVectors(joint.axis, hingeAxisAfterRotation);
+      joint.quaternion.multiply(fromToQuaternion);
 
-    const clampedRotation = joint.rotation.toVector3();
-    const hingeAxis = joint.axis.toArray();
-    for (let idx = 0; idx < hingeAxis.length; idx++) {
-      if (hingeAxis[idx] === 1) {
-        const rotationValue = clampedRotation.getComponent(idx);
-        const clampedValue = MathUtils.clamp(
-          rotationValue,
-          joint.limits.min,
-          joint.limits.max
-        );
-        clampedRotation.setComponent(idx, clampedValue);
+      // Apply hinge limits.
+
+      const clampedRotation = joint.rotation.toVector3();
+      const hingeAxis = joint.axis.toArray();
+      for (let idx = 0; idx < hingeAxis.length; idx++) {
+        if (hingeAxis[idx] === 1) {
+          const rotationValue = clampedRotation.getComponent(idx);
+          const clampedValue = MathUtils.clamp(
+            rotationValue,
+            joint.limits.min,
+            joint.limits.max
+          );
+          clampedRotation.setComponent(idx, clampedValue);
+        }
       }
-    }
-    joint.rotation.setFromVector3(clampedRotation);
+      joint.rotation.setFromVector3(clampedRotation);
 
-    joint.updateMatrixWorld();
+      joint.updateMatrixWorld();
+    }
+
+    endEffectorTargetDistance = endEffector
+      .worldToLocal(targetPosition.clone())
+      .length();
+    numOfIterations++;
   }
 }
 
