@@ -5,12 +5,13 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "parcel serve watch index.html ccdIK.html"
+    "dev": "parcel serve watch index.html"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "three": "^0.128.0"
+    "three": "^0.128.0",
+    "urdf-loader": "^0.10.2"
   },
   "devDependencies": {
     "eslint": "^7.26.0"
