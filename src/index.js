@@ -2,16 +2,18 @@ import {
   Scene,
   PerspectiveCamera,
   WebGLRenderer,
-  Bone,
-  Skeleton,
-  SkeletonHelper,
+  PointLight,
   Object3D,
+  LoadingManager,
   Vector3,
+  Group,
+  Mesh,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
+import URDFLoader from 'urdf-loader';
 
-import IKSolver from './fabrikIKSolver';
+import { IKChain, IKHelper, IKSolver } from './ik';
 
 const scene = new Scene();
 const camera = new PerspectiveCamera(
@@ -27,68 +29,84 @@ renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
+const lights = [];
+lights[0] = new PointLight(0xffffff, 1, 0);
+lights[1] = new PointLight(0xffffff, 1, 0);
+lights[2] = new PointLight(0xffffff, 1, 0);
+
+lights[0].position.set(0, 200, 0);
+lights[1].position.set(100, 200, 100);
+lights[2].position.set(-100, -200, -100);
+
+scene.add(lights[0]);
+scene.add(lights[1]);
+scene.add(lights[2]);
+
 const orbitControls = new OrbitControls(camera, renderer.domElement);
 orbitControls.minDistance = 0.1;
 orbitControls.target.y = 1;
 orbitControls.update();
 
-const BONE_COUNT = 4;
-const BONE_LENGTH = 0.25;
-
-const bones = [];
-let parentBone;
-for (let idx = 0; idx < BONE_COUNT; idx++) {
-  const bone = new Bone();
-  bone.position.y = idx === 0 ? 0 : BONE_LENGTH;
-  // bone.matrixWorldNeedsUpdate = true;
-  if (parentBone) parentBone.add(bone);
-  parentBone = bone;
-  bones.push(bone);
-}
-
-// Debug
-// const pos = new Vector3();
-// for (const bone of bones) {
-//   bone.getWorldPosition(pos);
-//   console.log('bone pos: ', pos);
-// }
-
-const skeleton = new Skeleton(bones);
-const skeletonHelper = new SkeletonHelper(skeleton.bones[0]);
-skeletonHelper.material.linewidth = 2;
-scene.add(skeletonHelper);
-scene.add(skeleton.bones[0]);
-
-const movingTarget = new Object3D();
-movingTarget.position.y = (BONE_COUNT - 1) * BONE_LENGTH;
 const transformControls = new TransformControls(camera, renderer.domElement);
 transformControls.addEventListener('dragging-changed', (evt) => {
   orbitControls.enabled = !evt.value;
 });
 
-transformControls.addEventListener('objectChange', () => {
-  const newBonePositions = IKSolver(bones, movingTarget);
-  // console.log(newBonePositions);
-  for (let idx = 0; idx < bones.length; idx++) {
-    const bone = bones[idx];
-    const boneGlobalPosition = newBonePositions[idx];
-    const parentBone = bones[idx - 1];
-    const parentPosition = new Vector3();
-    if (parentBone) {
-      parentBone.getWorldPosition(parentPosition);
-    }
-    const boneLocalPosition = boneGlobalPosition.sub(parentPosition);
-    bone.position.copy(boneLocalPosition);
-    // console.log('bone pos', bone.position);
-  }
+const loadingManager = new LoadingManager();
+const urdfLoader = new URDFLoader(loadingManager);
+
+let robot;
+const ikSolver = new IKSolver({ shouldUpdateUrdfRobot: true });
+
+urdfLoader.load('./urdf/KUKA_LWR/urdf/kuka_lwr.URDF', (result) => {
+  robot = result;
 });
 
-transformControls.attach(movingTarget);
-scene.add(movingTarget);
-scene.add(transformControls);
+loadingManager.onLoad = () => {
+  console.log(robot);
+
+  robot.traverse((child) => {
+    if (child instanceof Mesh) {
+      child.material.transparent = true;
+      child.material.opacity = 0.5;
+    }
+    child.castShadow = true;
+  });
+
+  const group = new Group();
+  group.add(robot);
+
+  const ikChain = new IKChain();
+  ikChain.createFromUrdfRobot(robot, group);
+
+  group.rotateX(-Math.PI / 2);
+  scene.add(group);
+
+  ikSolver.ikChain = ikChain;
+  ikSolver.target = createMovingTarget(ikChain.endEffector);
+
+  const ikHelper = new IKHelper(ikChain);
+  ikHelper.visualizeIKChain();
+};
+
+function createMovingTarget(endEffector) {
+  const movingTarget = new Object3D();
+  const endEffectorWorldPosition = new Vector3();
+  endEffector.getWorldPosition(endEffectorWorldPosition);
+  movingTarget.position.copy(endEffectorWorldPosition);
+
+  transformControls.addEventListener('objectChange', () => {
+    ikSolver.solve();
+  });
+
+  transformControls.attach(movingTarget);
+  scene.add(movingTarget);
+  scene.add(transformControls);
+
+  return movingTarget;
+}
 
 function render() {
-  // bones[1].position.z = 0.25;
   renderer.render(scene, camera);
   requestAnimationFrame(render);
 }
