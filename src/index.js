@@ -55,7 +55,7 @@ const urdfLoader = new URDFLoader(loadingManager);
 let robot;
 const ikSolver = new IKSolver({ shouldUpdateUrdfRobot: true });
 
-urdfLoader.load('./urdf/KUKA_LWR/urdf/kuka_lwr.URDF', (result) => {
+urdfLoader.load('./urdf/kuka-lwr/urdf/kuka_lwr.URDF', (result) => {
   robot = result;
 });
 
