@@ -9,7 +9,7 @@
   },
   "staticFiles": {
     "staticPath": "public",
-    "watcherGlob": "**"
+    "watcherGlob": false
   },
   "author": "",
   "license": "ISC",
