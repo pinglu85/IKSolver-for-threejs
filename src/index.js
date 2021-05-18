@@ -64,6 +64,8 @@ const transformControls = new TransformControls(camera, renderer.domElement);
 transformControls.addEventListener('dragging-changed', (evt) => {
   orbitControls.enabled = !evt.value;
 });
+const movingTarget = new Object3D();
+transformControls.attach(movingTarget);
 
 const loadingManager = new LoadingManager();
 const urdfLoader = new URDFLoader(loadingManager);
@@ -72,6 +74,11 @@ const xacroLoader = new XacroLoader();
 let robot;
 let robotGroup;
 const ikSolver = new IKSolver({ shouldUpdateUrdfRobot: true });
+ikSolver.target = movingTarget;
+transformControls.addEventListener('objectChange', () => {
+  ikSolver.solve();
+});
+
 let isLoading = false;
 
 function loadUrdfRobot(isKuka) {
@@ -136,27 +143,23 @@ loadingManager.onLoad = () => {
   scene.add(robotGroup);
 
   ikSolver.ikChain = ikChain;
-  ikSolver.target = createMovingTarget(ikChain.endEffector);
+  setMovingTargetPosition(ikChain.endEffector);
 
   const ikHelper = new IKHelper(ikChain);
   ikHelper.visualizeIKChain();
 };
 
-function createMovingTarget(endEffector) {
-  const movingTarget = new Object3D();
-  const endEffectorWorldPosition = new Vector3();
+const endEffectorWorldPosition = new Vector3();
+
+function setMovingTargetPosition(endEffector) {
+  const movingTargetInScene = scene.getObjectById(movingTarget.id);
+  if (!movingTargetInScene) {
+    scene.add(movingTarget);
+    scene.add(transformControls);
+  }
+
   endEffector.getWorldPosition(endEffectorWorldPosition);
   movingTarget.position.copy(endEffectorWorldPosition);
-
-  transformControls.addEventListener('objectChange', () => {
-    ikSolver.solve();
-  });
-
-  transformControls.attach(movingTarget);
-  scene.add(movingTarget);
-  scene.add(transformControls);
-
-  return movingTarget;
 }
 
 function render() {
