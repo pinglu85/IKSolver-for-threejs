@@ -7,6 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "parcel serve watch index.html"
   },
+  "staticFiles": {
+    "staticPath": "public",
+    "watcherGlob": "**"
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -14,6 +18,7 @@
     "urdf-loader": "^0.10.2"
   },
   "devDependencies": {
-    "eslint": "^7.26.0"
+    "eslint": "^7.26.0",
+    "parcel-plugin-static-files-copy": "^2.6.0"
   }
 }
