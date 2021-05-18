@@ -2,7 +2,8 @@ import {
   Scene,
   PerspectiveCamera,
   WebGLRenderer,
-  PointLight,
+  DirectionalLight,
+  AmbientLight,
   Object3D,
   LoadingManager,
   Vector3,
@@ -29,18 +30,14 @@ renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-const lights = [];
-lights[0] = new PointLight(0xffffff, 1, 0);
-lights[1] = new PointLight(0xffffff, 1, 0);
-lights[2] = new PointLight(0xffffff, 1, 0);
+const directionalLight = new DirectionalLight(0xffffff, 1.0);
+directionalLight.castShadow = true;
+directionalLight.shadow.mapSize.setScalar(1024);
+directionalLight.position.set(5, 30, 5);
+scene.add(directionalLight);
 
-lights[0].position.set(0, 200, 0);
-lights[1].position.set(100, 200, 100);
-lights[2].position.set(-100, -200, -100);
-
-scene.add(lights[0]);
-scene.add(lights[1]);
-scene.add(lights[2]);
+const ambientLight = new AmbientLight(0xffffff, 0.2);
+scene.add(ambientLight);
 
 const orbitControls = new OrbitControls(camera, renderer.domElement);
 orbitControls.minDistance = 0.1;
