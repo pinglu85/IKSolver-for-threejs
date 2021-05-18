@@ -3,8 +3,27 @@
     * {
       margin: 0;
     }
+
+    .robot-select-wrapper {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 200px;
+      height: 100px;
+      z-index: 20;
+      background: #fff;
+      padding: 20px;
+    }
   </style>
   <body>
+    <div class="robot-select-wrapper">
+      <label for="robot-select">Choose a robot:</label>
+      <select id="robot-select">
+        <option value="kuka" selected>Kuka LWR</option>
+        <option value="staubli">Staubli TX2 90</option>
+      </select>
+    </div>
+
     <script src="src/index.js"></script>
   </body>
 </html>

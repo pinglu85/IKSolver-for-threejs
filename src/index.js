@@ -13,8 +13,24 @@ import {
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 import URDFLoader from 'urdf-loader';
+import { XacroLoader } from 'xacro-parser';
 
 import { IKChain, IKHelper, IKSolver } from './ik';
+import {
+  KUKA_URL,
+  STAUBLI_URL,
+  STAUBLI_PACKAGES_URLS,
+} from './constants/robotFilePaths';
+
+const selectInput = document.querySelector('select');
+selectInput.addEventListener('change', (evt) => {
+  const { value } = evt.target;
+  if (value === 'kuka') {
+    loadUrdfRobot(true);
+  } else if (value === 'staubli') {
+    loadUrdfRobot(false);
+  }
+});
 
 const scene = new Scene();
 const camera = new PerspectiveCamera(
@@ -51,13 +67,53 @@ transformControls.addEventListener('dragging-changed', (evt) => {
 
 const loadingManager = new LoadingManager();
 const urdfLoader = new URDFLoader(loadingManager);
+const xacroLoader = new XacroLoader();
 
 let robot;
+let robotGroup;
 const ikSolver = new IKSolver({ shouldUpdateUrdfRobot: true });
+let isLoading = false;
 
-urdfLoader.load('./urdf/kuka-lwr/urdf/kuka_lwr.URDF', (result) => {
-  robot = result;
-});
+function loadUrdfRobot(isKuka) {
+  if (isLoading) return;
+
+  isLoading = true;
+
+  if (robot) {
+    const robotGroupID = scene.getObjectById(robotGroup.id);
+    scene.remove(robotGroupID);
+  }
+
+  if (isKuka) {
+    urdfLoader.load(KUKA_URL, (result) => {
+      robot = result;
+      isLoading = false;
+    });
+  } else {
+    // Handle `xacro:include filename='...'` in XACRO file.
+    xacroLoader.rospackCommands = {
+      find(pkg) {
+        switch (pkg) {
+          case 'staubli_resources':
+            return STAUBLI_PACKAGES_URLS.staubli_resources;
+          case 'staubli_tx2_90_support':
+            return STAUBLI_PACKAGES_URLS.staubli_tx2_90_support;
+          default:
+            return pkg;
+        }
+      },
+    };
+
+    xacroLoader.load(STAUBLI_URL, (xml) => {
+      urdfLoader.packages = {
+        staubli_tx2_90_support: STAUBLI_PACKAGES_URLS.staubli_tx2_90_support,
+      };
+      robot = urdfLoader.parse(xml);
+      isLoading = false;
+    });
+  }
+}
+loadUrdfRobot(true);
 
 loadingManager.onLoad = () => {
   console.log(robot);
@@ -70,14 +126,14 @@ loadingManager.onLoad = () => {
     child.castShadow = true;
   });
 
-  const group = new Group();
-  group.add(robot);
+  robotGroup = new Group();
+  robotGroup.add(robot);
 
   const ikChain = new IKChain();
-  ikChain.createFromUrdfRobot(robot, group);
+  ikChain.createFromUrdfRobot(robot, robotGroup);
 
-  group.rotateX(-Math.PI / 2);
-  scene.add(group);
+  robotGroup.rotateX(-Math.PI / 2);
+  scene.add(robotGroup);
 
   ikSolver.ikChain = ikChain;
   ikSolver.target = createMovingTarget(ikChain.endEffector);
