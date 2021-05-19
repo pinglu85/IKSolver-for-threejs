@@ -1,10 +1,10 @@
 import IKJoint from './IKJoint';
-
 class IKChain {
   constructor() {
     this._ikJoints = [];
     this._urdfJoints = [];
     this._rootJoint = null;
+    this._urdfBaseJointId = '';
     this._endEffector = null;
   }
 
@@ -31,28 +31,44 @@ class IKChain {
 
   createFromUrdfRobot(urdfRobot, rootJointParent) {
     this._rootJoint = new IKJoint();
-    let parent = rootJointParent;
-    this.addJoint(parent, this._rootJoint);
-    parent = this._rootJoint;
+    this.addJoint(rootJointParent, this._rootJoint);
 
-    const robotJointsKeys = Object.keys(urdfRobot.joints);
+    const urdfRobotBaseJoint = this._findUrdfBaseJoint(urdfRobot);
+    this._urdfBaseJointId = urdfRobotBaseJoint.id;
 
-    for (let idx = 0; idx < robotJointsKeys.length; idx++) {
-      const key = robotJointsKeys[idx];
-      const urdfJoint = urdfRobot.joints[key];
-      this._urdfJoints.push(urdfJoint);
-
-      const ikJoint = new IKJoint(urdfJoint);
-      this.addJoint(parent, ikJoint);
-
-      if (idx === robotJointsKeys.length - 1) {
-        this._endEffector = ikJoint;
-      }
-
-      parent = ikJoint;
-    }
+    this._traverseUrdfJoints(this._rootJoint, urdfRobotBaseJoint);
 
     return this;
+  }
+
+  _findUrdfBaseJoint({ joints }) {
+    const baseJointKey = Object.keys(joints).find((key) => {
+      const urdfJoint = joints[key];
+      const { parent } = urdfJoint;
+      return parent.isURDFRobot;
+    });
+    return joints[baseJointKey];
+  }
+
+  _traverseUrdfJoints(parentIkJoint, urdfJoint) {
+    this._urdfJoints.push(urdfJoint);
+
+    const ikJoint = new IKJoint(urdfJoint);
+    this.addJoint(parentIkJoint, ikJoint);
+    parentIkJoint = ikJoint;
+
+    const [urdfLink] = urdfJoint.children;
+    const { children } = urdfLink;
+    const nextUrdfJoint = children.find((child) => child.isURDFJoint);
+    const isEndEffector =
+      ikJoint.isFixed && urdfJoint.id !== this._urdfBaseJointId;
+
+    if (!nextUrdfJoint || isEndEffector) {
+      this._endEffector = ikJoint;
+      return;
+    }
+
+    this._traverseUrdfJoints(parentIkJoint, nextUrdfJoint);
   }
 }
 
