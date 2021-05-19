@@ -8,8 +8,6 @@ import {
 } from 'three';
 
 const COLOR = 0x0092ff;
-const IS_TRANSPARENT = true;
-const OPACITY = 0.5;
 const LINK_SIZE = {
   tubularSegments: 64,
   radius: 0.001,
@@ -43,7 +41,9 @@ class IKHelper {
 
       parent = ikJoint;
 
-      if (idx === 0) continue;
+      if (idx === 0 || idx === this.ikJoints.length - 1) {
+        continue;
+      }
 
       const joint = new Mesh(jointGeometry, this.jointMaterial);
 
@@ -78,8 +78,6 @@ class IKHelper {
     const material = new MeshBasicMaterial({
       color: this.config.linkColor || COLOR,
     });
-    material.transparent = this.config.isTransparent || IS_TRANSPARENT;
-    material.opacity = this.config.opacity || OPACITY;
     return material;
   }
 
@@ -101,8 +99,6 @@ class IKHelper {
     const material = new MeshBasicMaterial({
       color: this.config.JointColor || COLOR,
     });
-    material.transparent = this.config.isTransparent || IS_TRANSPARENT;
-    material.opacity = this.config.opacity || OPACITY;
     return material;
   }
 }
