@@ -6,6 +6,7 @@ class IKJoint extends Group {
     this.axis = new Vector3(0, 1, 0);
     this.limit = {};
     this.isHinge = false;
+    this.isFixed = false;
     this.isRootJoint = false;
     this.isIkJoint = true;
 
@@ -13,6 +14,7 @@ class IKJoint extends Group {
       this.position.copy(urdfJoint.position);
       this.rotation.copy(urdfJoint.rotation);
       this.isHinge = urdfJoint.jointType === 'revolute';
+      this.isFixed = urdfJoint.jointType === 'fixed';
       this.axis.copy(urdfJoint.axis);
       this.limit = { ...urdfJoint.limit };
     } else {

@@ -17,9 +17,13 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
     numOfIterations <= maxNumOfIterations
   ) {
     for (let idx = ikJoints.length - 2; idx >= 0; idx--) {
-      endEffector.getWorldPosition(endEffectorWorldPosition);
-
       const ikJoint = ikJoints[idx];
+      if (ikJoint.isFixed) {
+        ikJoint.updateMatrixWorld();
+        continue;
+      }
+
+      endEffector.getWorldPosition(endEffectorWorldPosition);
 
       // Rotate the joint from end effector to goal, so that the end-effector
       // can meet the target.
