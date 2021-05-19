@@ -41,7 +41,9 @@ class IKHelper {
 
       parent = ikJoint;
 
-      if (idx === 0) continue;
+      if (idx === 0 || idx === this.ikJoints.length - 1) {
+        continue;
+      }
 
       const joint = new Mesh(jointGeometry, this.jointMaterial);
 
