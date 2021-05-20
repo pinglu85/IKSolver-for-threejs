@@ -41,13 +41,22 @@ class IKChain {
     return this;
   }
 
-  _findUrdfBaseJoint({ joints }) {
-    const baseJointKey = Object.keys(joints).find((key) => {
-      const urdfJoint = joints[key];
-      const { parent } = urdfJoint;
-      return parent.isURDFRobot;
-    });
-    return joints[baseJointKey];
+  _findUrdfBaseJoint({ children }) {
+    let baseJoint = null;
+    for (const child of children) {
+      if (!child.isURDFJoint) continue;
+
+      const [urdfLink] = child.children;
+      const hasNextUrdfJoint = urdfLink.children.some(
+        (child) => child.isURDFJoint
+      );
+      if (hasNextUrdfJoint) {
+        baseJoint = child;
+        break;
+      }
+    }
+
+    return baseJoint;
   }
 
   _traverseUrdfJoints(parentIkJoint, urdfJoint) {
