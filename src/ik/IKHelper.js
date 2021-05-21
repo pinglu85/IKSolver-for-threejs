@@ -5,6 +5,7 @@ import {
   MeshBasicMaterial,
   Mesh,
   CylinderGeometry,
+  AxesHelper,
 } from 'three';
 
 const COLOR = 0x0092ff;
@@ -47,13 +48,12 @@ class IKHelper {
 
       const joint = new Mesh(jointGeometry, this.jointMaterial);
 
-      const jointAxisIdx = ikJoint.axis
-        .toArray()
-        .findIndex((value) => value === 1 || value === -1);
-      let jointAxis = jointAxisIdx === 0 ? 'x' : jointAxisIdx === 1 ? 'y' : 'z';
-      if (jointAxis === 'z') {
+      if (ikJoint.axisName === 'z') {
         joint.rotateX(Math.PI / 2);
       }
+
+      const axesHelper = new AxesHelper(0.1);
+      ikJoint.add(axesHelper);
 
       ikJoint.add(joint);
     }

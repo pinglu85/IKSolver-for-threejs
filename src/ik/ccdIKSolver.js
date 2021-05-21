@@ -1,4 +1,4 @@
-import { Vector3, MathUtils, Quaternion } from 'three';
+import { Vector3, Quaternion } from 'three';
 
 function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
   const { ikJoints, endEffector } = ikChain;
@@ -18,6 +18,7 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
   ) {
     for (let idx = ikJoints.length - 2; idx >= 0; idx--) {
       const ikJoint = ikJoints[idx];
+      // ikJoint.updateMatrixWorld();
       if (ikJoint.isFixed) {
         ikJoint.updateMatrixWorld();
         continue;
@@ -79,20 +80,29 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
       // Apply hinge limits.
 
       if (ikJoint.limit) {
-        const clampedRotation = ikJoint.rotation.toVector3();
-        const hingeAxis = ikJoint.axis.toArray();
-        for (let idx = 0; idx < hingeAxis.length; idx++) {
-          if (hingeAxis[idx] === 1) {
-            const rotationValue = clampedRotation.getComponent(idx);
-            const clampedValue = MathUtils.clamp(
-              rotationValue,
-              ikJoint.limit.lower,
-              ikJoint.limit.upper
-            );
-            clampedRotation.setComponent(idx, clampedValue);
-          }
+        const {
+          quaternion,
+          initialQuaternion,
+          limit: { lower, upper },
+          axisName,
+          axisIsNegative,
+        } = ikJoint;
+
+        let jointAxisQuaternion = quaternion[axisName];
+        jointAxisQuaternion = axisIsNegative
+          ? -jointAxisQuaternion
+          : jointAxisQuaternion;
+        let rotatedAngle = quaternion.angleTo(initialQuaternion);
+        rotatedAngle = jointAxisQuaternion < 0 ? -rotatedAngle : rotatedAngle;
+
+        let rotateBackAngle = rotatedAngle;
+        if (rotatedAngle < lower) {
+          rotateBackAngle = lower;
+        } else if (rotatedAngle > upper) {
+          rotateBackAngle = upper;
         }
-        ikJoint.rotation.setFromVector3(clampedRotation);
+
+        ikJoint.quaternion.setFromAxisAngle(ikJoint.axis, rotateBackAngle);
       }
 
       ikJoint.updateMatrixWorld();

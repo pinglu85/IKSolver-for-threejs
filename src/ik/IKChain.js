@@ -1,4 +1,5 @@
 import IKJoint from './IKJoint';
+
 class IKChain {
   constructor() {
     this._ikJoints = [];
