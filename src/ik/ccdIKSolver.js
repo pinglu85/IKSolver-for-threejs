@@ -92,13 +92,14 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
         jointAxisQuaternion = axisIsNegative
           ? -jointAxisQuaternion
           : jointAxisQuaternion;
-        let rotatedAngle = quaternion.angleTo(initialQuaternion);
-        rotatedAngle = jointAxisQuaternion < 0 ? -rotatedAngle : rotatedAngle;
+        let rotationAngle = quaternion.angleTo(initialQuaternion);
+        rotationAngle =
+          jointAxisQuaternion < 0 ? -rotationAngle : rotationAngle;
 
-        let rotateBackAngle = rotatedAngle;
-        if (rotatedAngle < lower) {
+        let rotateBackAngle = rotationAngle;
+        if (rotationAngle < lower) {
           rotateBackAngle = lower;
-        } else if (rotatedAngle > upper) {
+        } else if (rotationAngle > upper) {
           rotateBackAngle = upper;
         }
 
