@@ -96,14 +96,14 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
         rotationAngle =
           jointAxisQuaternion < 0 ? -rotationAngle : rotationAngle;
 
-        let rotateBackAngle = rotationAngle;
+        let clampedRotationAngle = rotationAngle;
         if (rotationAngle < lower) {
-          rotateBackAngle = lower;
+          clampedRotationAngle = lower;
         } else if (rotationAngle > upper) {
-          rotateBackAngle = upper;
+          clampedRotationAngle = upper;
         }
 
-        ikJoint.quaternion.setFromAxisAngle(ikJoint.axis, rotateBackAngle);
+        ikJoint.quaternion.setFromAxisAngle(ikJoint.axis, clampedRotationAngle);
       }
 
       ikJoint.updateMatrixWorld();
