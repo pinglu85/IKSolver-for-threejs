@@ -80,29 +80,13 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
       // Apply hinge limits.
 
       if (ikJoint.limit) {
-        const {
-          quaternion,
-          initialQuaternion,
-          limit: { lower, upper },
-          axisName,
-          axisIsNegative,
-        } = ikJoint;
+        const rotationAngle = getRotationAngle(ikJoint);
+        const clampedRotationAngle = clampRotationAngle(
+          rotationAngle,
+          ikJoint.limit
+        );
 
-        let jointAxisQuaternion = quaternion[axisName];
-        jointAxisQuaternion = axisIsNegative
-          ? -jointAxisQuaternion
-          : jointAxisQuaternion;
-        let rotatedAngle = quaternion.angleTo(initialQuaternion);
-        rotatedAngle = jointAxisQuaternion < 0 ? -rotatedAngle : rotatedAngle;
-
-        let rotateBackAngle = rotatedAngle;
-        if (rotatedAngle < lower) {
-          rotateBackAngle = lower;
-        } else if (rotatedAngle > upper) {
-          rotateBackAngle = upper;
-        }
-
-        ikJoint.quaternion.setFromAxisAngle(ikJoint.axis, rotateBackAngle);
+        ikJoint.quaternion.setFromAxisAngle(ikJoint.axis, clampedRotationAngle);
       }
 
       ikJoint.updateMatrixWorld();
@@ -113,6 +97,31 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
       .length();
     numOfIterations++;
   }
+}
+
+function getRotationAngle(ikJoint) {
+  const { axisName, axisIsNegative } = ikJoint;
+  const rotationAngle = ikJoint.quaternion.angleTo(ikJoint.initialQuaternion);
+
+  let jointAxisQuaternion = ikJoint.quaternion[axisName];
+  jointAxisQuaternion = axisIsNegative
+    ? -jointAxisQuaternion
+    : jointAxisQuaternion;
+
+  return jointAxisQuaternion < 0 ? -rotationAngle : rotationAngle;
+}
+
+function clampRotationAngle(rotationAngle, limit) {
+  const { lower, upper } = limit;
+  if (rotationAngle < lower) {
+    return lower;
+  }
+
+  if (rotationAngle > limit.upper) {
+    return upper;
+  }
+
+  return rotationAngle;
 }
 
 export default ccdIKSolver;
