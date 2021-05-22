@@ -81,20 +81,10 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
 
       if (ikJoint.limit) {
         const {
-          quaternion,
-          initialQuaternion,
           limit: { lower, upper },
-          axisName,
-          axisIsNegative,
         } = ikJoint;
 
-        let jointAxisQuaternion = quaternion[axisName];
-        jointAxisQuaternion = axisIsNegative
-          ? -jointAxisQuaternion
-          : jointAxisQuaternion;
-        let rotationAngle = quaternion.angleTo(initialQuaternion);
-        rotationAngle =
-          jointAxisQuaternion < 0 ? -rotationAngle : rotationAngle;
+        const rotationAngle = getRotationAngle(ikJoint);
 
         let clampedRotationAngle = rotationAngle;
         if (rotationAngle < lower) {
@@ -114,6 +104,18 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
       .length();
     numOfIterations++;
   }
+}
+
+function getRotationAngle(ikJoint) {
+  const { axisName, axisIsNegative } = ikJoint;
+  const rotationAngle = ikJoint.quaternion.angleTo(ikJoint.initialQuaternion);
+
+  let jointAxisQuaternion = ikJoint.quaternion[axisName];
+  jointAxisQuaternion = axisIsNegative
+    ? -jointAxisQuaternion
+    : jointAxisQuaternion;
+
+  return jointAxisQuaternion < 0 ? -rotationAngle : rotationAngle;
 }
 
 export default ccdIKSolver;
