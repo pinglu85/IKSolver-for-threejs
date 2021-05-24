@@ -18,7 +18,6 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
   ) {
     for (let idx = ikJoints.length - 2; idx >= 0; idx--) {
       const ikJoint = ikJoints[idx];
-      // ikJoint.updateMatrixWorld();
       if (ikJoint.isFixed) {
         ikJoint.updateMatrixWorld();
         continue;
@@ -100,15 +99,10 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
 }
 
 function getRotationAngle(ikJoint) {
-  const { axisName, axisIsNegative } = ikJoint;
-  const rotationAngle = ikJoint.quaternion.angleTo(ikJoint.initialQuaternion);
-
-  let jointAxisQuaternion = ikJoint.quaternion[axisName];
-  jointAxisQuaternion = axisIsNegative
-    ? -jointAxisQuaternion
-    : jointAxisQuaternion;
-
-  return jointAxisQuaternion < 0 ? -rotationAngle : rotationAngle;
+  const { axisName, axis } = ikJoint;
+  // Given an axis [a_x, a_y, a_z] and angle theta,
+  // Quaternion = [a_x * sin(theta / 2), a_y * sin(theta / 2), a_z * sin(theta / 2), cos(theta / 2)]
+  return Math.asin(ikJoint.quaternion[axisName] / axis[axisName]) * 2;
 }
 
 function clampRotationAngle(rotationAngle, limit) {
