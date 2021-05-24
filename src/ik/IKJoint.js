@@ -1,10 +1,9 @@
-import { Group, Vector3, Quaternion } from 'three';
+import { Group, Vector3 } from 'three';
 
 class IKJoint extends Group {
   constructor(urdfJoint = null) {
     super();
     this.position.set(0, 0, 0);
-    this.initialQuaternion = new Quaternion();
     this.axis = new Vector3(0, 1, 0);
     this.isRootJoint = true;
     this.isHinge = false;
@@ -15,7 +14,6 @@ class IKJoint extends Group {
     if (urdfJoint) {
       this.position.copy(urdfJoint.position);
       this.rotation.copy(urdfJoint.rotation);
-      this.initialQuaternion = urdfJoint.quaternion.clone();
       this.isRootJoint = false;
       this.isHinge = urdfJoint.jointType === 'revolute';
       this.isFixed = urdfJoint.jointType === 'fixed';

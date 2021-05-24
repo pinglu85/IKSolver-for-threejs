@@ -1,14 +1,21 @@
 import { Vector3, Quaternion } from 'three';
 
+const endEffectorWorldPosition = new Vector3();
+const endEffectorWorldToLocalPosition = new Vector3();
+
+const targetWorldToLocalPosition = new Vector3();
+
+const fromToQuaternion = new Quaternion();
+
+const inverseQuaternion = new Quaternion();
+
+const jointAxisAfterRotation = new Vector3();
+
 function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
   const { ikJoints, endEffector } = ikChain;
 
-  const endEffectorWorldPosition = new Vector3();
-
-  const fromToQuaternion = new Quaternion();
-
   let endEffectorTargetDistance = endEffector
-    .worldToLocal(targetPosition.clone())
+    .worldToLocal(targetWorldToLocalPosition.copy(targetPosition))
     .length();
   let numOfIterations = 0;
 
@@ -18,7 +25,6 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
   ) {
     for (let idx = ikJoints.length - 2; idx >= 0; idx--) {
       const ikJoint = ikJoints[idx];
-      // ikJoint.updateMatrixWorld();
       if (ikJoint.isFixed) {
         ikJoint.updateMatrixWorld();
         continue;
@@ -40,12 +46,14 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
       // that will apply to current joint and it is easier to apply local
       // quaternion, we choose the latter method.
       const directionToEndEffector = ikJoint
-        .worldToLocal(endEffectorWorldPosition.clone())
+        .worldToLocal(
+          endEffectorWorldToLocalPosition.copy(endEffectorWorldPosition)
+        )
         .normalize();
 
       // Get the direction from current joint to target.
       const directionToTarget = ikJoint
-        .worldToLocal(targetPosition.clone())
+        .worldToLocal(targetWorldToLocalPosition.copy(targetPosition))
         .normalize();
 
       fromToQuaternion.setFromUnitVectors(
@@ -66,13 +74,14 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
       // that will end up with awkward rotation of the joint before the final rotation
       // is found.
       if (ikJoint.isHinge || ikJoint.isRootJoint) {
-        const inverseRotation = ikJoint.quaternion.clone().invert();
-        const hingeAxisAfterRotation = ikJoint.axis
-          .clone()
-          .applyQuaternion(inverseRotation);
+        inverseQuaternion.copy(ikJoint.quaternion).invert();
+        jointAxisAfterRotation
+          .copy(ikJoint.axis)
+          .applyQuaternion(inverseQuaternion);
+
         fromToQuaternion.setFromUnitVectors(
           ikJoint.axis,
-          hingeAxisAfterRotation
+          jointAxisAfterRotation
         );
         ikJoint.quaternion.multiply(fromToQuaternion);
       }
@@ -80,48 +89,46 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
       // Apply hinge limits.
 
       if (ikJoint.limit) {
-        const rotationAngle = getRotationAngle(ikJoint);
-        const clampedRotationAngle = clampRotationAngle(
-          rotationAngle,
+        const ikJointRotationAngle = getIKJointRotationAngle(ikJoint);
+        const clampedIKJointRotationAngle = clampIKJointRotationAngle(
+          ikJointRotationAngle,
           ikJoint.limit
         );
 
-        ikJoint.quaternion.setFromAxisAngle(ikJoint.axis, clampedRotationAngle);
+        ikJoint.quaternion.setFromAxisAngle(
+          ikJoint.axis,
+          clampedIKJointRotationAngle
+        );
       }
 
       ikJoint.updateMatrixWorld();
     }
 
     endEffectorTargetDistance = endEffector
-      .worldToLocal(targetPosition.clone())
+      .worldToLocal(targetWorldToLocalPosition.copy(targetPosition))
       .length();
     numOfIterations++;
   }
 }
 
-function getRotationAngle(ikJoint) {
-  const { axisName, axisIsNegative } = ikJoint;
-  const rotationAngle = ikJoint.quaternion.angleTo(ikJoint.initialQuaternion);
-
-  let jointAxisQuaternion = ikJoint.quaternion[axisName];
-  jointAxisQuaternion = axisIsNegative
-    ? -jointAxisQuaternion
-    : jointAxisQuaternion;
-
-  return jointAxisQuaternion < 0 ? -rotationAngle : rotationAngle;
+function getIKJointRotationAngle(ikJoint) {
+  const { axisName, axis } = ikJoint;
+  // Given an axis [a_x, a_y, a_z] and angle theta,
+  // Quaternion = [a_x * sin(theta / 2), a_y * sin(theta / 2), a_z * sin(theta / 2), cos(theta / 2)]
+  return Math.asin(ikJoint.quaternion[axisName] / axis[axisName]) * 2;
 }
 
-function clampRotationAngle(rotationAngle, limit) {
+function clampIKJointRotationAngle(ikJointRotationAngle, limit) {
   const { lower, upper } = limit;
-  if (rotationAngle < lower) {
+  if (ikJointRotationAngle < lower) {
     return lower;
   }
 
-  if (rotationAngle > limit.upper) {
+  if (ikJointRotationAngle > limit.upper) {
     return upper;
   }
 
-  return rotationAngle;
+  return ikJointRotationAngle;
 }
 
 export default ccdIKSolver;
