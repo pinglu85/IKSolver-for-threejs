@@ -1,14 +1,21 @@
 import { Vector3, Quaternion } from 'three';
 
+const endEffectorWorldPosition = new Vector3();
+const endEffectorWorldToLocalPosition = new Vector3();
+
+const targetWorldToLocalPosition = new Vector3();
+
+const fromToQuaternion = new Quaternion();
+
+const inverseQuaternion = new Quaternion();
+
+const jointAxisAfterRotation = new Vector3();
+
 function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
   const { ikJoints, endEffector } = ikChain;
 
-  const endEffectorWorldPosition = new Vector3();
-
-  const fromToQuaternion = new Quaternion();
-
   let endEffectorTargetDistance = endEffector
-    .worldToLocal(targetPosition.clone())
+    .worldToLocal(targetWorldToLocalPosition.copy(targetPosition))
     .length();
   let numOfIterations = 0;
 
@@ -39,12 +46,14 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
       // that will apply to current joint and it is easier to apply local
       // quaternion, we choose the latter method.
       const directionToEndEffector = ikJoint
-        .worldToLocal(endEffectorWorldPosition.clone())
+        .worldToLocal(
+          endEffectorWorldToLocalPosition.copy(endEffectorWorldPosition)
+        )
         .normalize();
 
       // Get the direction from current joint to target.
       const directionToTarget = ikJoint
-        .worldToLocal(targetPosition.clone())
+        .worldToLocal(targetWorldToLocalPosition.copy(targetPosition))
         .normalize();
 
       fromToQuaternion.setFromUnitVectors(
@@ -65,13 +74,14 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
       // that will end up with awkward rotation of the joint before the final rotation
       // is found.
       if (ikJoint.isHinge || ikJoint.isRootJoint) {
-        const inverseRotation = ikJoint.quaternion.clone().invert();
-        const hingeAxisAfterRotation = ikJoint.axis
-          .clone()
-          .applyQuaternion(inverseRotation);
+        inverseQuaternion.copy(ikJoint.quaternion).invert();
+        jointAxisAfterRotation
+          .copy(ikJoint.axis)
+          .applyQuaternion(inverseQuaternion);
+
         fromToQuaternion.setFromUnitVectors(
           ikJoint.axis,
-          hingeAxisAfterRotation
+          jointAxisAfterRotation
         );
         ikJoint.quaternion.multiply(fromToQuaternion);
       }
@@ -95,7 +105,7 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
     }
 
     endEffectorTargetDistance = endEffector
-      .worldToLocal(targetPosition.clone())
+      .worldToLocal(targetWorldToLocalPosition.copy(targetPosition))
       .length();
     numOfIterations++;
   }
