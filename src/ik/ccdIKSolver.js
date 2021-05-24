@@ -79,13 +79,16 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
       // Apply hinge limits.
 
       if (ikJoint.limit) {
-        const rotationAngle = getRotationAngle(ikJoint);
-        const clampedRotationAngle = clampRotationAngle(
-          rotationAngle,
+        const ikJointRotationAngle = getIKJointRotationAngle(ikJoint);
+        const clampedIKJointRotationAngle = clampIKJointRotationAngle(
+          ikJointRotationAngle,
           ikJoint.limit
         );
 
-        ikJoint.quaternion.setFromAxisAngle(ikJoint.axis, clampedRotationAngle);
+        ikJoint.quaternion.setFromAxisAngle(
+          ikJoint.axis,
+          clampedIKJointRotationAngle
+        );
       }
 
       ikJoint.updateMatrixWorld();
@@ -98,24 +101,24 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
   }
 }
 
-function getRotationAngle(ikJoint) {
+function getIKJointRotationAngle(ikJoint) {
   const { axisName, axis } = ikJoint;
   // Given an axis [a_x, a_y, a_z] and angle theta,
   // Quaternion = [a_x * sin(theta / 2), a_y * sin(theta / 2), a_z * sin(theta / 2), cos(theta / 2)]
   return Math.asin(ikJoint.quaternion[axisName] / axis[axisName]) * 2;
 }
 
-function clampRotationAngle(rotationAngle, limit) {
+function clampIKJointRotationAngle(ikJointRotationAngle, limit) {
   const { lower, upper } = limit;
-  if (rotationAngle < lower) {
+  if (ikJointRotationAngle < lower) {
     return lower;
   }
 
-  if (rotationAngle > limit.upper) {
+  if (ikJointRotationAngle > limit.upper) {
     return upper;
   }
 
-  return rotationAngle;
+  return ikJointRotationAngle;
 }
 
 export default ccdIKSolver;
