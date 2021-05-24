@@ -8,7 +8,7 @@ class IKSolver {
     this.isHybrid = config.isHybrid || false;
     this.tolerance = config.tolerance || 0.01;
     this.maxNumOfIterations = config.maxNumOfIterations || 10;
-    this.shouldUpdateUrdfRobot = config.shouldUpdateUrdfRobot || false;
+    this.shouldUpdateURDFRobot = config.shouldUpdateURDFRobot || false;
   }
 
   get ikChain() {
@@ -43,12 +43,12 @@ class IKSolver {
       this.maxNumOfIterations
     );
 
-    if (this.shouldUpdateUrdfRobot) {
-      this._updateUrdfRobot();
+    if (this.shouldUpdateURDFRobot) {
+      this._updateURDFRobot();
     }
   }
 
-  _updateUrdfRobot() {
+  _updateURDFRobot() {
     const { ikJoints, urdfJoints } = this.ikChain;
     for (let idx = 0; idx < urdfJoints.length; idx++) {
       const ikJoint = ikJoints[idx + 1];

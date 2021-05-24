@@ -26,9 +26,9 @@ const selectInput = document.querySelector('select');
 selectInput.addEventListener('change', (evt) => {
   const { value } = evt.target;
   if (value === 'kuka') {
-    loadUrdfRobot(true);
+    loadURDFRobot(true);
   } else if (value === 'staubli') {
-    loadUrdfRobot(false);
+    loadURDFRobot(false);
   }
 });
 
@@ -73,7 +73,7 @@ const xacroLoader = new XacroLoader();
 
 let robot;
 let robotGroup;
-const ikSolver = new IKSolver({ shouldUpdateUrdfRobot: true });
+const ikSolver = new IKSolver({ shouldUpdateURDFRobot: true });
 ikSolver.target = movingTarget;
 transformControls.addEventListener('objectChange', () => {
   ikSolver.solve();
@@ -81,7 +81,7 @@ transformControls.addEventListener('objectChange', () => {
 
 let isLoading = false;
 
-function loadUrdfRobot(isKuka) {
+function loadURDFRobot(isKuka) {
   if (isLoading) return;
 
   isLoading = true;
@@ -120,7 +120,7 @@ function loadUrdfRobot(isKuka) {
     });
   }
 }
-loadUrdfRobot(true);
+loadURDFRobot(true);
 
 loadingManager.onLoad = () => {
   console.log(robot);
@@ -137,7 +137,7 @@ loadingManager.onLoad = () => {
   robotGroup.add(robot);
 
   const ikChain = new IKChain();
-  ikChain.createFromUrdfRobot(robot, robotGroup);
+  ikChain.createFromURDFRobot(robot, robotGroup);
 
   robotGroup.rotateX(-Math.PI / 2);
   scene.add(robotGroup);

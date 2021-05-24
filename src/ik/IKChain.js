@@ -30,28 +30,28 @@ class IKChain {
     return this._urdfJoints;
   }
 
-  createFromUrdfRobot(urdfRobot, rootJointParent) {
+  createFromURDFRobot(urdfRobot, rootJointParent) {
     this._rootJoint = new IKJoint();
     this.addJoint(rootJointParent, this._rootJoint);
 
-    const urdfRobotBaseJoint = this._findUrdfBaseJoint(urdfRobot);
+    const urdfRobotBaseJoint = this._findURDFBaseJoint(urdfRobot);
     this._urdfBaseJointId = urdfRobotBaseJoint.id;
 
-    this._traverseUrdfJoints(this._rootJoint, urdfRobotBaseJoint);
+    this._traverseURDFJoints(this._rootJoint, urdfRobotBaseJoint);
 
     return this;
   }
 
-  _findUrdfBaseJoint({ children }) {
+  _findURDFBaseJoint({ children }) {
     let baseJoint = null;
     for (const child of children) {
       if (!child.isURDFJoint) continue;
 
       const [urdfLink] = child.children;
-      const hasNextUrdfJoint = urdfLink.children.some(
+      const hasNextURDFJoint = urdfLink.children.some(
         (child) => child.isURDFJoint
       );
-      if (hasNextUrdfJoint) {
+      if (hasNextURDFJoint) {
         baseJoint = child;
         break;
       }
@@ -60,7 +60,7 @@ class IKChain {
     return baseJoint;
   }
 
-  _traverseUrdfJoints(parentIkJoint, urdfJoint) {
+  _traverseURDFJoints(parentIkJoint, urdfJoint) {
     this._urdfJoints.push(urdfJoint);
 
     const ikJoint = new IKJoint(urdfJoint);
@@ -78,7 +78,7 @@ class IKChain {
       return;
     }
 
-    this._traverseUrdfJoints(parentIkJoint, nextUrdfJoint);
+    this._traverseURDFJoints(parentIkJoint, nextUrdfJoint);
   }
 }
 
