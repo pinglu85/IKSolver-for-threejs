@@ -2,13 +2,9 @@ import { Vector3, Quaternion } from 'three';
 
 const endEffectorWorldPosition = new Vector3();
 const endEffectorWorldToLocalPosition = new Vector3();
-
 const targetWorldToLocalPosition = new Vector3();
-
 const fromToQuaternion = new Quaternion();
-
 const inverseQuaternion = new Quaternion();
-
 const jointAxisAfterRotation = new Vector3();
 
 function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
