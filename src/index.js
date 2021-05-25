@@ -16,6 +16,7 @@ import URDFLoader from 'urdf-loader';
 import { XacroLoader } from 'xacro-parser';
 
 import { IKChain, IKHelper, IKSolver } from './ik';
+import { HALF_PI } from './constants/math';
 import {
   KUKA_URL,
   STAUBLI_URL,
@@ -139,7 +140,7 @@ loadingManager.onLoad = () => {
   const ikChain = new IKChain();
   ikChain.createFromURDFRobot(robot, robotGroup);
 
-  robotGroup.rotateX(-Math.PI / 2);
+  robotGroup.rotateX(-HALF_PI);
   scene.add(robotGroup);
 
   ikSolver.ikChain = ikChain;
