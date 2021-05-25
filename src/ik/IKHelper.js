@@ -9,6 +9,7 @@ import {
 } from 'three';
 
 import AXIS_NAMES from '../constants/axisNames';
+import { HALF_PI } from '../constants/math';
 
 const COLOR = 0x0092ff;
 const LINK_SIZE = {
@@ -51,7 +52,7 @@ class IKHelper {
       const joint = new Mesh(jointGeometry, this.jointMaterial);
 
       if (ikJoint.axisName === AXIS_NAMES.Z) {
-        joint.rotateX(Math.PI / 2);
+        joint.rotateX(HALF_PI);
       }
 
       const axesHelper = new AxesHelper(0.1);
