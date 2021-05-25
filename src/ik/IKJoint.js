@@ -1,5 +1,7 @@
 import { Group, Vector3 } from 'three';
 
+import AXIS_NAMES from '../constants/axisNames';
+
 class IKJoint extends Group {
   constructor(urdfJoint = null) {
     super();
@@ -33,7 +35,11 @@ class IKJoint extends Group {
   }
 
   get axisName() {
-    return this.axisIdx === 0 ? 'x' : this.axisIdx === 1 ? 'y' : 'z';
+    return this.axisIdx === 0
+      ? AXIS_NAMES.X
+      : this.axisIdx === 1
+      ? AXIS_NAMES.Y
+      : AXIS_NAMES.Z;
   }
 
   get axisIsNegative() {

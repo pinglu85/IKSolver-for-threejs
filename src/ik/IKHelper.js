@@ -8,6 +8,8 @@ import {
   AxesHelper,
 } from 'three';
 
+import AXIS_NAMES from '../constants/axisNames';
+
 const COLOR = 0x0092ff;
 const LINK_SIZE = {
   tubularSegments: 64,
@@ -48,7 +50,7 @@ class IKHelper {
 
       const joint = new Mesh(jointGeometry, this.jointMaterial);
 
-      if (ikJoint.axisName === 'z') {
+      if (ikJoint.axisName === AXIS_NAMES.Z) {
         joint.rotateX(Math.PI / 2);
       }
 
