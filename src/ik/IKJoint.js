@@ -35,11 +35,16 @@ class IKJoint extends Group {
   }
 
   get axisName() {
-    return this.axisIdx === 0
-      ? AXIS_NAMES.X
-      : this.axisIdx === 1
-      ? AXIS_NAMES.Y
-      : AXIS_NAMES.Z;
+    switch (this.axisIdx) {
+      case 0:
+        return AXIS_NAMES.X;
+      case 1:
+        return AXIS_NAMES.Y;
+      case 2:
+        return AXIS_NAMES.Z;
+      default:
+        return '';
+    }
   }
 
   get axisIsNegative() {
