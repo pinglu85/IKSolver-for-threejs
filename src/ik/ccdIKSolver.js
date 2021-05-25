@@ -2,13 +2,9 @@ import { Vector3, Quaternion } from 'three';
 
 const endEffectorWorldPosition = new Vector3();
 const endEffectorWorldToLocalPosition = new Vector3();
-
 const targetWorldToLocalPosition = new Vector3();
-
 const fromToQuaternion = new Quaternion();
-
 const inverseQuaternion = new Quaternion();
-
 const jointAxisAfterRotation = new Vector3();
 
 function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
@@ -90,15 +86,15 @@ function ccdIKSolver(ikChain, targetPosition, tolerance, maxNumOfIterations) {
 
       if (ikJoint.limit) {
         const ikJointRotationAngle = getIKJointRotationAngle(ikJoint);
-        const clampedIKJointRotationAngle = clampIKJointRotationAngle(
-          ikJointRotationAngle,
-          ikJoint.limit
-        );
+        const [clampedIKJointRotationAngle, isClamped] =
+          clampIKJointRotationAngle(ikJointRotationAngle, ikJoint.limit);
 
-        ikJoint.quaternion.setFromAxisAngle(
-          ikJoint.axis,
-          clampedIKJointRotationAngle
-        );
+        if (isClamped) {
+          ikJoint.quaternion.setFromAxisAngle(
+            ikJoint.axis,
+            clampedIKJointRotationAngle
+          );
+        }
       }
 
       ikJoint.updateMatrixWorld();
@@ -120,15 +116,18 @@ function getIKJointRotationAngle(ikJoint) {
 
 function clampIKJointRotationAngle(ikJointRotationAngle, limit) {
   const { lower, upper } = limit;
+  let isClamped = false;
   if (ikJointRotationAngle < lower) {
-    return lower;
+    isClamped = true;
+    return [lower, isClamped];
   }
 
-  if (ikJointRotationAngle > limit.upper) {
-    return upper;
+  if (ikJointRotationAngle > upper) {
+    isClamped = true;
+    return [upper, isClamped];
   }
 
-  return ikJointRotationAngle;
+  return [ikJointRotationAngle, isClamped];
 }
 
 export default ccdIKSolver;
